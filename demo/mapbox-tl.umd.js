@@ -2,10 +2,10 @@
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
     (global = global || self, factory(global.mapboxgl = global.mapboxgl || {}));
-}(this, function (exports) { 'use strict';
+}(this, (function (exports) { 'use strict';
 
     class TextureLayer {
-        constructor(id, tileJson, onAddCallback, renderCallback, preRenderCallback) {
+        constructor(id, tileJson, onAddCallback, renderCallback, preRenderCallback, tilesUpdatedCallback) {
             this.map = null;
             this.gl = null;
             this.id = id;
@@ -17,6 +17,7 @@
             this.onAddCallback = onAddCallback;
             this.renderCallback = renderCallback;
             this.preRenderCallback = preRenderCallback;
+            this.tilesUpdatedCallback = tilesUpdatedCallback;
         }
         onAdd(map, gl) {
             this.map = map;
@@ -41,8 +42,13 @@
 
         }
         onData(e) {
-            if (e.sourceDataType == 'content')
+            if (e.sourceDataType == 'content') {
                 this.updateTiles();
+            } else if (e.tile !== undefined && this.map.isSourceLoaded(this.source)) {
+                if (this.tilesUpdatedCallback) {
+                    this.tilesUpdatedCallback(this.gl, this.sourceCache.getVisibleCoordinates());
+                }
+            }
         }
         updateTiles() {
             this.sourceCache.update(this.map.painter.transform);
@@ -61,4 +67,4 @@
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-}));
+})));

@@ -3,7 +3,7 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 class TextureLayer {
-    constructor(id, tileJson, onAddCallback, renderCallback, preRenderCallback) {
+    constructor(id, tileJson, onAddCallback, renderCallback, preRenderCallback, tilesUpdatedCallback) {
         this.map = null;
         this.gl = null;
         this.id = id;
@@ -15,6 +15,7 @@ class TextureLayer {
         this.onAddCallback = onAddCallback;
         this.renderCallback = renderCallback;
         this.preRenderCallback = preRenderCallback;
+        this.tilesUpdatedCallback = tilesUpdatedCallback;
     }
     onAdd(map, gl) {
         this.map = map;
@@ -39,8 +40,13 @@ class TextureLayer {
 
     }
     onData(e) {
-        if (e.sourceDataType == 'content')
+        if (e.sourceDataType == 'content') {
             this.updateTiles();
+        } else if (e.tile !== undefined && this.map.isSourceLoaded(this.source)) {
+            if (this.tilesUpdatedCallback) {
+                this.tilesUpdatedCallback(this.gl, this.sourceCache.getVisibleCoordinates());
+            }
+        }
     }
     updateTiles() {
         this.sourceCache.update(this.map.painter.transform);
