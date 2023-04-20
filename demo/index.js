@@ -85,7 +85,7 @@ class ColoredTextureLayer extends mapboxgl.TextureLayer {
         gl.bufferData(gl.ARRAY_BUFFER, vertexArray, gl.STATIC_DRAW);
     }
 
-    render(gl, matrix, projection, projectionToMercatorMatrix, projectionToMercatorTransition, centerInMercator, pixelsPerMeterRation) {
+    render(gl, projectionMatrix, projection, projectionToMercatorMatrix, projectionToMercatorTransition, centerInMercator, pixelsPerMeterRatio) {
         const tiles = this.visibleTiles();
         gl.useProgram(this.program);
         tiles.forEach(tile => {

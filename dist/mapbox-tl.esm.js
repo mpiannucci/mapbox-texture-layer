@@ -41,9 +41,9 @@ class TextureLayer {
     updateTiles() {
         this.sourceCache.update(this.map.painter.transform);
     }
-    prerender(gl, matrix, projection, projectionToMercatorMatrix, projectionToMercatorTransition, centerInMercator, pixelsPerMeterRation) {
+    prerender(gl, projectionMatrix, projection, projectionToMercatorMatrix, projectionToMercatorTransition, centerInMercator, pixelsPerMeterRatio) {
     }
-    render(gl, matrix, projection, projectionToMercatorMatrix, projectionToMercatorTransition, centerInMercator, pixelsPerMeterRation) {
+    render(gl, projectionMatrix, projection, projectionToMercatorMatrix, projectionToMercatorTransition, centerInMercator, pixelsPerMeterRatio) {
     }
     renderToTile(gl, tileId) {
     }
