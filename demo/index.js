@@ -30,21 +30,23 @@ var fragmentSource = `
      `
 const map = new mapboxgl.Map({
     container: document.getElementById('map'),
-    style: 'mapbox://styles/mapbox/empty-v8',
+    projection: 'globe',
+    style: 'mapbox://styles/mapbox/dark-v11',
     center: [145, -16],
     zoom: 0
 });
 map.on('load', () => {
-    let customlayer = new mapboxgl.TextureLayer(
-        'test', 
-        {
+    let customlayer = new mapboxgl.TextureLayer({
+        id: 'test',
+        tileJson: {
             type: 'raster',
             tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
             attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>'
         },
-        setupLayer,
-        render
-    );
+        onAddCallback: setupLayer,
+        renderCallback: render,
+        renderToTileCallback: renderToTile
+    });
     map.addLayer(customlayer);
 });
 
@@ -85,12 +87,12 @@ function render(gl, matrix, tiles) {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      
+
         gl.bindBuffer(gl.ARRAY_BUFFER, program.vertexBuffer);
         gl.enableVertexAttribArray(program.a_pos);
         gl.vertexAttribPointer(program.aPos, 2, gl.FLOAT, false, 0, 0);
 
-        gl.uniformMatrix4fv(program.uMatrix, false, tile.tileID.posMatrix);
+        gl.uniformMatrix4fv(program.uMatrix, false, tile.tileID.projMatrix);
         gl.uniform1i(program.uTexture, 0);
         gl.depthFunc(gl.LESS);
         //gl.enable(gl.BLEND);
@@ -99,5 +101,48 @@ function render(gl, matrix, tiles) {
 
     });
 }
+function renderToTile(gl, tileId) {
+    gl.useProgram(program);
 
+    const tileKey = calculateKey(0, tileId.z, tileId.z, tileId.x, tileId.y);
+    const tile = this.sourceCache.getTileByID(tileKey)
 
+    if (!tile.texture) return;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tile.texture.texture);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, program.vertexBuffer);
+    gl.enableVertexAttribArray(program.a_pos);
+    gl.vertexAttribPointer(program.aPos, 2, gl.FLOAT, false, 0, 0);
+
+    gl.uniformMatrix4fv(program.uMatrix, false, tile.tileID.projMatrix);
+    gl.uniform1i(program.uTexture, 0);
+    gl.depthFunc(gl.LESS);
+    //gl.enable(gl.BLEND);
+    //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+// Ripped from https://github.com/mapbox/mapbox-gl-js/blob/main/src/source/tile_id.js
+function calculateKey(wrap, overscaledZ, z, x, y) {
+    // only use 22 bits for x & y so that the key fits into MAX_SAFE_INTEGER
+    const dim = 1 << Math.min(z, 22);
+    let xy = dim * (y % dim) + (x % dim);
+
+    // zigzag-encode wrap if we have the room for it
+    if (wrap && z < 22) {
+        const bitsAvailable = 2 * (22 - z);
+        xy += dim * dim * ((wrap < 0 ? -2 * wrap - 1 : 2 * wrap) % (1 << bitsAvailable));
+    }
+
+    // encode z into 5 bits (24 max) and overscaledZ into 4 bits (10 max)
+    const key = ((xy * 32) + z) * 16 + (overscaledZ - z);
+    // assert(key >= 0 && key <= Number.MAX_SAFE_INTEGER);
+
+    return key;
+}

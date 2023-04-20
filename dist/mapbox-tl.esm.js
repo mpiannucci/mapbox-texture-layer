@@ -1,5 +1,5 @@
 class TextureLayer {
-    constructor(id, tileJson, onAddCallback, renderCallback, preRenderCallback, tilesUpdatedCallback) {
+    constructor({id, tileJson, onAddCallback, renderCallback, renderToTileCallback, preRenderCallback, tilesUpdatedCallback}) {
         this.map = null;
         this.gl = null;
         this.id = id;
@@ -10,6 +10,7 @@ class TextureLayer {
         this.program = null;
         this.onAddCallback = onAddCallback;
         this.renderCallback = renderCallback;
+        this.renderToTileCallback = renderToTileCallback;
         this.preRenderCallback = preRenderCallback;
         this.tilesUpdatedCallback = tilesUpdatedCallback;
     }
@@ -20,9 +21,10 @@ class TextureLayer {
         map.on('zoom', this.zoom.bind(this));
 
         map.addSource(this.source, this.tileJson);
+
         this.tileSource = this.map.getSource(this.source);
         this.tileSource.on('data', this.onData.bind(this));
-        this.sourceCache = this.map.style.sourceCaches[this.source];
+        this.sourceCache = this.map.style._sourceCaches['other:' + this.source];
 
         // !IMPORTANT! hack to make mapbox mark the sourceCache as 'used' so it will initialise tiles.
         this.map.style._layers[this.id].source = this.source;
@@ -54,6 +56,13 @@ class TextureLayer {
     render(gl, matrix) {
         if (this.renderCallback)
             this.renderCallback(gl, matrix, this.sourceCache.getVisibleCoordinates().map(tileid => this.sourceCache.getTile(tileid)));
+    }
+    renderToTile(gl, tileId) {
+        if (this.renderToTileCallback)
+            this.renderToTileCallback(gl, tileId);
+    }
+    shouldRerenderTiles() {
+        return true;
     }
 }
 
