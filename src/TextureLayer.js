@@ -1,6 +1,6 @@
 
 export class TextureLayer {
-    constructor({id, tileJson, onAddCallback, renderCallback, renderToTileCallback, preRenderCallback, tilesUpdatedCallback}) {
+    constructor({id, tileJson}) {
         this.map = null;
         this.gl = null;
         this.id = id;
@@ -9,11 +9,6 @@ export class TextureLayer {
         this.type = 'custom';
         this.tileJson = tileJson;
         this.program = null;
-        this.onAddCallback = onAddCallback;
-        this.renderCallback = renderCallback;
-        this.renderToTileCallback = renderToTileCallback
-        this.preRenderCallback = preRenderCallback;
-        this.tilesUpdatedCallback = tilesUpdatedCallback;
     }
     onAdd(map, gl) {
         this.map = map;
@@ -29,8 +24,6 @@ export class TextureLayer {
 
         // !IMPORTANT! hack to make mapbox mark the sourceCache as 'used' so it will initialise tiles.
         this.map.style._layers[this.id].source = this.source;
-        if (this.onAddCallback)
-            this.onAddCallback(map, gl);
     }
     move(e) {
         this.updateTiles();
@@ -42,27 +35,24 @@ export class TextureLayer {
         if (e.sourceDataType == 'content') {
             this.updateTiles();
         } else if (e.tile !== undefined && this.map.isSourceLoaded(this.source)) {
-            if (this.tilesUpdatedCallback) {
-                this.tilesUpdatedCallback(this.gl, this.sourceCache.getVisibleCoordinates());
-            }
+            // if (this.tilesUpdatedCallback) {
+            //     this.tilesUpdatedCallback(this.gl, this.sourceCache.getVisibleCoordinates());
+            // }
         }
+    }
+    visibleTiles() {
+        return this.sourceCache.getVisibleCoordinates().map(tileid => this.sourceCache.getTile(tileid));
     }
     updateTiles() {
         this.sourceCache.update(this.map.painter.transform);
     }
-    prerender(gl, matrix) {
-        if (this.preRenderCallback) 
-            this.preRenderCallback(gl, matrix, this.sourceCache.getVisibleCoordinates().map(tileid => this.sourceCache.getTile(tileid)));
+    prerender(gl, matrix, projection, projectionToMercatorMatrix, projectionToMercatorTransition, centerInMercator, pixelsPerMeterRation) {
     }
-    render(gl, matrix) {
-        if (this.renderCallback)
-            this.renderCallback(gl, matrix, this.sourceCache.getVisibleCoordinates().map(tileid => this.sourceCache.getTile(tileid)))
+    render(gl, matrix, projection, projectionToMercatorMatrix, projectionToMercatorTransition, centerInMercator, pixelsPerMeterRation) {
     }
     renderToTile(gl, tileId) {
-        if (this.renderToTileCallback)
-            this.renderToTileCallback(gl, tileId)
     }
     shouldRerenderTiles() {
-        return true;
+        return false;
     }
 }
