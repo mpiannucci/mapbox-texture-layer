@@ -176,6 +176,8 @@ class ColoredTextureLayer extends mapboxgl.TextureLayer {
         const tileKey = calculateKey(0, tileId.z, tileId.z, tileId.x, tileId.y);
         const tile = this.sourceCache.getTileByID(tileKey)
 
+        console.log(tileId);
+
         if (!tile.texture) return;
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, tile.texture.texture);
